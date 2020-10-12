@@ -12,7 +12,11 @@ packets through the proxy server.
 Using a jump server
 
     ./mosh-with-jump -J $jump_server $destination
-    
+
+Using a jump server with ProxyJump in .ssh/config
+
+    ./mosh-with-jump $destination
+
 With ports specified (for the target server)
 
     ./mosh-with-jump -p 61000:61100 -J $jump_server $destination
