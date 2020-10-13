@@ -5,6 +5,7 @@ set -o errexit -o pipefail -o nounset
 orig_args=("$@")
 mosh_server_args=()
 proxy=
+proxy_port=
 target=
 
 while [[ $# -gt 0 ]]; do
@@ -15,6 +16,13 @@ while [[ $# -gt 0 ]]; do
     -J | --jump-server)
       shift
       proxy=$1
+      ;;
+    --proxy-port=*)
+      proxy_port=${1#--proxy-port=}
+      ;;
+    -P | --proxy-port)
+      shift
+      proxy_port=$1
       ;;
     -p)
       mosh_server_args+=("$1" "$2")
@@ -60,9 +68,10 @@ connect_line=$(grep -m1 '^MOSH CONNECT ' <<< "$mosh_server_out")
 target_port=$(perl -anE 'print $F[2]' <<< "$connect_line")
 key=$(perl -anE 'print $F[3]' <<< "$connect_line")
 
-# we'll need find a free port on the proxy, which might be different from the target
-find_free_port_cmd=$(
-  cat << EOF
+if [[ -z $proxy_port ]]; then
+  # we'll need find a free port on the proxy, which might be different from the target
+  find_free_port_cmd=$(
+    cat << EOF
 for (( p=$target_port ; p < $target_port + 10; p++ )); do
   if [[ -z \$(ss -Hlu sport = \$p) ]]; then
     echo "\$p"
@@ -71,8 +80,9 @@ for (( p=$target_port ; p < $target_port + 10; p++ )); do
 done
 exit 1
 EOF
-)
-proxy_port=$(ssh -n "$proxy" bash -c "${find_free_port_cmd@Q}")
+  )
+  proxy_port=$(ssh -n "$proxy" bash -c "${find_free_port_cmd@Q}")
+fi
 
 echo "proxy port: $proxy_port"
 echo "target port: $target_port"
