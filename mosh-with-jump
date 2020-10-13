@@ -42,6 +42,11 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+# read ProxyJump from ssh config
+if [[ ! -z $target ]]; then
+    proxy=$(ssh -G "$target" | perl -anE '/^proxyjump (.+)/ && print "$1"')
+fi
+
 # if we're not using a jump server, let's just call mosh directly
 if [[ -z $proxy ]]; then
   exec mosh "${orig_args[@]}"
@@ -52,6 +57,10 @@ fi
 # SSH itself.
 proxy_host=$(ssh -G "$proxy" | perl -anE '/^hostname (.+)/ && print "$1"')
 proxy_ip=$(dig "$proxy_host" +short)
+# if proxy host is ip address, then use proxy_host directly
+if [[ -z $proxy_ip ]]; then
+    proxy_ip=$proxy_host
+fi
 target_host=$(ssh -G "$target" | perl -anE '/^hostname (.+)/ && print "$1"')
 
 echo "proxy: $proxy"
