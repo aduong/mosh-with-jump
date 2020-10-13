@@ -9,6 +9,9 @@ target=
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --jump-server=*)
+      proxy=${1#--jump-server=}
+      ;;
     -J | --jump-server)
       shift
       proxy=$1
